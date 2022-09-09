@@ -8,4 +8,6 @@
 
 tests/
 
+.DS_Store
+
 tiny6502.code-workspace
