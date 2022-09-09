@@ -1,0 +1,11 @@
+.vscode/
+.history/
+
+*.vsix
+
+[Bb]uild/
+[Oo]bj/
+
+tests/
+
+tiny6502.code-workspace
