@@ -26,7 +26,7 @@
 #include <stdlib.h>
 
 const char PRODUCT_NAME[] = "tiny6502 cross-assembler";
-const char VERSION[] = "0.1";
+const char VERSION[] = "0.2";
 const char COPYRIGHT[] = "(c) 2022 informedcitizenry";
 const char LEGAL[] = "tiny6502 comes with ABSOLUTELY NO WARRANTY. "
                      "This is free software, and you are welcome to redistribute it under certain "
@@ -161,6 +161,10 @@ int main(int argc, const char * argv[])
     lexer_destroy(lexer);
     builtin_cleanup();
     assembly_context_destroy(ctx);
+
+#ifdef CHECK_LEAKS
+    tiny_memory_report();
+#endif
     
     return EXIT_SUCCESS;
 }

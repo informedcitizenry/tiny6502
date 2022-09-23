@@ -242,6 +242,33 @@ To include tiny6502-compatible source for compilation, use the `.include` direct
     ...
 ```
 
+### Reserving space without outputting code
+
+There are a few pseudo-ops that allow you to reserve space for storage without affecting assembly output. The `.align` and `.fill` commands serve this purpose when only one argument is specified.
+
+```
+star_field  .fill   FIELD_WIDTH * FIELD_HEIGHT
+```
+
+The biggest difference between these two commands is the first argument in `.fill` specifies the number of bytes to reserve space. The `.align` pseudo-op aligns the program counter value to an amount divisable by the argument.
+
+```
+            .align  $100    // align to the nearest page
+```
+
+If a second (optional) parameter is specified for either one of these pseudo-ops, this changes the behavior so that the output is filled with the values according to the fill length/alignment of the first argument.
+
+```
+            .fill   9,$ffd220 // three jsr $ffd2 calls
+```
+Space can also be reserved using the `.byte`, `.word`, `.long`, `.dword` and string pseudo-ops by passing a `?` argument.
+
+```
+            * = $00
+zp_byte_var .byte ? // same as .fill 1
+zp_word_var .word ? // same as .fill 2
+```
+
 ### Marking code as relocatable
 
 The assembler actually has two program counters, a "real" program counter tracking the actual offset in the 64KiB address space, and a "logical" program counter to which symbolic addresses resolve. By default both are the same, but for purposes of assembling code that can be relocated, the `.relocate` directive changes the logical program counter without affecting the real PC.
@@ -364,4 +391,11 @@ inc24       .macro
 
 ## Changelog
 
-2022-09-09 - Version 0.1 "Hello, tiny6502" Version
+*2022-09-23*
+- **Version 0.2**
+- Fixed unary expression evaluation
+- Fixed `.align` pseudo-op
+- Added `?` expression for pseudo-op code output
+
+*2022-09-09*
+- **Version 0.1 "Hello, tiny6502" Version**

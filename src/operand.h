@@ -12,6 +12,16 @@
 
 typedef struct expression expression;
 typedef struct dynamic_array expression_array;
+typedef struct dynamic_array pseudo_op_arg_array;
+typedef struct token token;
+typedef struct pseudo_op_arg {
+    enum { PSEUDO_OP_EXPRESSION, PSEUDO_OP_QUERY } arg_type;
+    union {
+        expression *expression;
+        token *query;
+    } arg;
+} pseudo_op_arg;
+
 typedef struct operand
 {
     enum {
@@ -30,6 +40,7 @@ typedef struct operand
         FORM_ACCUMULATOR,
         FORM_BIT_ZP,
         FORM_BIT_OFFS_ZP,
+        FORM_PSEUDO_OP_LIST,
         FORM_EXPRESSION_LIST
     } form;
     union {
@@ -53,6 +64,9 @@ typedef struct operand
         struct {
             expression_array *expressions;
         } expression_list;
+        struct {
+            pseudo_op_arg_array *args;   
+        } pseudo_op_arg_args;
     };
 } operand;
 
@@ -61,6 +75,7 @@ operand *operand_two_expressions(expression *expr0, expression *expr1);
 operand *operand_bit(expression *bit, expression *expr);
 operand *operand_bit_offset(expression *bit, expression *offs, expression *expr);
 operand *operand_expression_list(expression_array *expressions);
+operand *operand_pseudo_op_args(pseudo_op_arg_array *args);
 
 void operand_destroy(operand *operand);
 

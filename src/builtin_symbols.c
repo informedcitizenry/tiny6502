@@ -10,6 +10,7 @@
 #include "builtin_symbols.h"
 #include "string_htable.h"
 #include "value.h"
+#include <stdlib.h>
 
 #define BUILTIN_NUMBER  22
 
@@ -65,7 +66,7 @@ static const value builtin_symbol_values[BUILTIN_NUMBER] =
     0
 };
 
-string_htable *BUILTIN_SYMBOL_TABLE = (void*)0;
+string_htable *BUILTIN_SYMBOL_TABLE = NULL;
 
 void builtin_init(int case_sensitive)
 {
@@ -79,5 +80,5 @@ void builtin_cleanup()
     if (BUILTIN_SYMBOL_TABLE) {
         string_htable_destroy(BUILTIN_SYMBOL_TABLE);
     }
-    BUILTIN_SYMBOL_TABLE = (void*)0;
+    BUILTIN_SYMBOL_TABLE = NULL;
 }

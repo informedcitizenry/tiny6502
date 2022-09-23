@@ -91,7 +91,12 @@ static void eval_scoped_identifier(assembly_context *context, const expression *
     value v = VALUE_UNDEFINED;
     if (!symbol_exists(context->sym_tab, scoped_name)) {
         if (!context->pass_needed) {
-            tiny_error(expr->binary.lhs->token, ERROR_MODE_RECOVER, "Unresolved symbol '%s'", scoped_name);
+            if (!context->passes) {
+                context->pass_needed = 1;
+            }
+            else {
+                tiny_error(expr->binary.lhs->token, ERROR_MODE_RECOVER, "Unresolved symbol '%s'", scoped_name);
+            }
         }
     }
     else {

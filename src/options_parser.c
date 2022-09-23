@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 static const char *help =
- "tiny6502 cross-asssembler Version 0.01\n"
+ "tiny6502 cross-asssembler Version 0.2\n"
  "(c) 2022 informedcitizenry\n"
  "\n"
  "Usage: tiny6502 [Options] file...\n"

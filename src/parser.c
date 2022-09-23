@@ -324,6 +324,8 @@ typedef struct parser
 static expression *parse_expr(parser *parser);
 static void eat(parser *parser);
 static int is_eos(parser* parser);
+static expression *factor(parser *parser);
+static expression *binary_expr(parser *parser, int precedence);
 
 #define EXPECT_OR_FREE(p, t, o) \
 if (!expect(p, t)) { tiny_free(o); return NULL; }
@@ -426,6 +428,35 @@ static expression_array *parse_expr_list(parser *parser)
     return exprs;
 }
 
+static pseudo_op_arg_array *parse_pseudo_op_args(parser *parser)
+{
+    pseudo_op_arg_array *args;
+    DYNAMIC_ARRAY_CREATE(args, pseudo_op_arg*);
+    for (;;) {
+        pseudo_op_arg *arg = malloc(sizeof(pseudo_op_arg));
+        if (match(parser, TOKEN_QUERY)) {
+            arg->arg_type = PSEUDO_OP_QUERY;
+            arg->arg.query = parser->current_token;
+            eat(parser);
+        }
+        else {
+            arg->arg_type = PSEUDO_OP_EXPRESSION;
+            expression *expr = parse_expr(parser);
+            if (!expr) {
+                tiny_free(arg);
+                break;
+            }
+            arg->arg.expression = expr;
+        }
+        dynamic_array_add(args, arg);
+        if (!match(parser, TOKEN_COMMA)) {
+            break;
+        }
+        eat(parser);
+    }
+    return args;
+}
+
 static expression *plus_hyphen(parser *parser)
 {
     token *oper = parser->current_token;
@@ -433,7 +464,7 @@ static expression *plus_hyphen(parser *parser)
     if (!token_is_of_type(parser->current_token, expression_types, sizeof expression_types)) {
         return expression_literal_ident(oper, 1);
     }
-    return expression_unary(oper, parse_expr(parser));
+    return expression_unary(oper, factor(parser));
 }
 
 static void expr_dtor(void *expr_ptr)
@@ -445,6 +476,15 @@ static expression *parse_ident(parser *parser)
 {
     token *ident = parser->current_token;
     eat(parser);
+    if (match(parser, TOKEN_DOT)) {
+        token *op = parser->current_token;
+        eat(parser);
+        if (!match(parser, TOKEN_IDENT)) {
+            expect(parser, TOKEN_IDENT);
+        }
+        return expression_binary(op, 
+            expression_literal_ident(ident, 1), binary_expr(parser, 14));
+    }
     if (match(parser, TOKEN_LPAREN)) {
         eat(parser);
         expression_array *params = parse_expr_list(parser);
@@ -477,7 +517,7 @@ static expression *factor(parser *parser)
         case TOKEN_BANG:
         case TOKEN_TILDE:
             eat(parser);
-            return expression_unary(current, parse_expr(parser));
+            return expression_unary(current, factor(parser));
         case TOKEN_LPAREN: {
             eat(parser);
             expression *inner = parse_expr(parser);
@@ -526,16 +566,21 @@ static expression *binary_expr(parser *parser, int precedence)
             break;
         }
         if (match(parser, TOKEN_QUERY)) {
-            return ternary_expr(parser, lhs);
+            lhs = ternary_expr(parser, lhs);
+        } else {
+            int next_prec = op_desc->associativity == ASSOC_LEFT ? op_desc->precedence + 1 : op_desc->precedence;
+            if (match(parser, TOKEN_DOT)) {
+                expect(parser, TOKEN_IDENT);
+            } else {
+                eat(parser);
+            }
+            expression *rhs = binary_expr(parser, next_prec);
+            if (!rhs) {
+                tiny_free(lhs);
+                return NULL;
+            }
+            lhs = expression_binary(op_token, lhs, rhs);
         }
-        int next_prec = op_desc->associativity == ASSOC_LEFT ? op_desc->precedence + 1 : op_desc->precedence;
-        eat(parser);
-        expression *rhs = binary_expr(parser, next_prec);
-        if (!rhs) {
-            tiny_free(lhs);
-            return NULL;
-        }
-        lhs = expression_binary(op_token, lhs, rhs);
     }
     return lhs;
 }
@@ -1040,7 +1085,7 @@ statement *parse_statement(parser *parser)
                     error(parser, parser->current_token, "Unexpected expression");
                     goto finish;
                 }
-                statement->operand = operand_expression_list(parse_expr_list(parser));
+                statement->operand = operand_pseudo_op_args(parse_pseudo_op_args(parser));
             } else if (!no_operand) {
                 error(parser, parser->current_token, "Expression expected");
             }

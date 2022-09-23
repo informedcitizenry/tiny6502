@@ -24,6 +24,15 @@ static void expression_dtor(void *expr_ptr)
     expression_destroy((expression*)expr_ptr);
 }
 
+static void pseudo_op_arg_dtor(void *ptr)
+{
+    pseudo_op_arg *arg = (pseudo_op_arg*)ptr;
+    if (arg->arg_type == PSEUDO_OP_EXPRESSION) {
+        expression_destroy(arg->arg.expression);
+    }
+    tiny_free(arg);
+}
+
 operand *operand_single_expression(int form, expression *expr, expression *bitwidth)
 {
     operand *operand = operand_create(form);
@@ -66,6 +75,14 @@ operand *operand_expression_list(expression_array *expressions)
     return operand;
 }
 
+operand *operand_pseudo_op_args(pseudo_op_arg_array *args)
+{
+    operand *operand = operand_create(FORM_PSEUDO_OP_LIST);
+    operand->pseudo_op_arg_args.args = args;
+    operand->pseudo_op_arg_args.args->dtor = pseudo_op_arg_dtor;
+    return operand;
+}
+
 void operand_destroy(operand *operand)
 {
     if (!operand) {
@@ -87,6 +104,9 @@ void operand_destroy(operand *operand)
         case FORM_TWO_OPERANDS:
             expression_destroy(operand->two_expression.expr0);
             expression_destroy(operand->two_expression.expr1);
+            break;
+        case FORM_PSEUDO_OP_LIST:
+            dynamic_array_cleanup_and_destroy(operand->pseudo_op_arg_args.args);
             break;
         default:
             expression_destroy(operand->single_expression.bitwidth);

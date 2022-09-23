@@ -1,4 +1,4 @@
-CFLAGS=-Wall -g -O2 #-DCHECK_LEAKS
+CFLAGS=-Wall -g -O2
 TARGET := tiny6502
 ifeq ($(OS), Windows_NT)
 	CC=gcc-mingw-w64

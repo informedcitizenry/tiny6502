@@ -419,6 +419,9 @@ static token *create_token(token_type type, lexer *lexer)
         t->include_line = include->curr_position.line_number;
     }
     lexer->previous_token = t;
+    if (t->type == TOKEN_END) {
+        t->type = TOKEN_EOF;
+    }
     return t;
 }
 
@@ -650,7 +653,7 @@ static int char_is_binary(int c)
 
 static int is_numeric(lexer *lexer, int(*fcn)(int))
 {
-     char c = current_char(lexer);
+    char c = current_char(lexer);
     int is_numeric = 0;
     while (fcn(c)){
         is_numeric = 1;
@@ -726,7 +729,7 @@ static token *check_solidus(lexer *lexer)
         position mark = lexer->curr_position;
         c = get_char(lexer);
         while (c != TOKEN_EOF) {
-            while (/*(c = get_char(lexer))*/c != '*' && c != TOKEN_EOF) {
+            while (c != '*' && c != TOKEN_EOF) {
                 c = get_char(lexer);
             }
             if (c != TOKEN_EOF) {

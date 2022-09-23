@@ -82,112 +82,13 @@ void dynamic_array_insert_range(dynamic_array *dest, const dynamic_array *src, s
 
 #ifdef CHECK_LEAKS
 
-struct object 
-{
-    const void *address;
-    int freed;
-    char location[100];
-};
-
-#define MAX_TRACK   100000
-
-static int at_exit_set = 0;
-
-static struct object allocations[MAX_TRACK] = {};
-static size_t allocation_count = 0;
-static size_t allocations_freed = 0;
-
-void tiny_free_diag(void *ptr, const char *file, int line)
-{
-    if (!ptr) {
-        return;
-    }
-    int freed = 0;
-    for(size_t i = 0; i < allocation_count; i++) {
-        if (ptr == allocations[i].address) {
-            if (!allocations[i].freed) {
-                allocations_freed++;
-                allocations[i].freed = 1;
-                allocations[i].address = NULL;
-                freed = 1;
-            }
-        }
-    }
-    if (!freed) {
-        printf("Object %p freed allocated at %s:%d was never malloced\n",
-            ptr, file, line);
-            return;
-    }
-    free(ptr);
-}
-
 void tiny_memory_report()
 {
-    for(size_t i = 0; i < allocation_count; i++) {
-        if (allocations[i].address) {
-            printf("Object with address %p allocated at %s was never freed\n",
-                allocations[i].address, allocations[i].location);
-        }
-    }
-    size_t unfreed = allocation_count - allocations_freed;
-    if (unfreed) {
-        printf("%zu objects were never freed", unfreed);
-    }
+    printf("Remeber to do 'export MallocStackLogging=1' before executing process\n");
+    system("leaks tiny6502");
 }
 
-static void buffer_check(const void *ptr, const char *file, int line)
-{
-    if (!at_exit_set) {
-        atexit(tiny_memory_report);
-        at_exit_set = 1;
-    }
-    if (!ptr) {
-        fputs(ERROR_TEXT "Fatal error: " DEFAULT_TEXT "Could not allocate a requested buffer. Sorry.", stderr);
-        exit(1);
-    }
-    if (allocation_count < MAX_TRACK) {
-        struct object obj;
-        obj.address = ptr;
-        obj.freed = 0;
-        snprintf(obj.location, 100, "%s:%d", file, line);
-        allocations[allocation_count++] = obj;
-    }
-}
-
-void *tiny_malloc_diag(size_t size, const char *file, int line)
-{
-    void *allocated = malloc(size);
-    buffer_check(allocated, file, line);
-    return allocated;
-}
-
-void *tiny_calloc_diag(size_t count, size_t size, const char *file, int line)
-{
-    void *allocated = calloc(count, size);
-    buffer_check(allocated, file, line);
-    return allocated;
-}
-
-void *tiny_realloc_diag(void *ptr, size_t size, const char *file, int line)
-{
-    if (!ptr) return tiny_malloc_diag(size, file, line);
-    void *allocated = realloc(ptr, size);
-    if (ptr != allocated) {
-        for(size_t i = 0; i < allocation_count; i++) {
-            if (allocations[i].address == ptr) {
-                if (!allocations[i].freed) {
-                    allocations[i].freed = 1;
-                    allocations[i].address = NULL;
-                    allocations_freed++;
-                }
-            }
-        }
-    }       
-    buffer_check(allocated, file, line);
-    return allocated;
-}
-
-#else
+#endif
 
 static void buffer_check(const void *ptr)
 {
@@ -221,4 +122,4 @@ void *tiny_realloc(void *ptr, size_t size)
     return tiny_malloc(size);
 }
 
-#endif /* CHECK_LEAKS */
+//#endif /* CHECK_LEAKS */
