@@ -570,7 +570,7 @@ static expression *binary_expr(parser *parser, int precedence)
         } else {
             int next_prec = op_desc->associativity == ASSOC_LEFT ? op_desc->precedence + 1 : op_desc->precedence;
             if (match(parser, TOKEN_DOT)) {
-                eat();
+                eat(parser);
                 if (!match(parser, TOKEN_IDENT)) {
                     expect(parser, TOKEN_IDENT);
                 }   
